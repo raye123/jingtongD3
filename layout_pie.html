@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>My Pie</title>
+    <script src="./js/d3.min.js"></script>
+</head>
+<body>
+</body>
+<script>
+    var width=600;
+    var height=600;
+    var svg=d3.select("body")
+            .append("svg")
+            .attr("width",width)
+            .attr("height",height);
+    // 1.确定初始数据
+    var dataset=[["小米",60.8],["三星",58.4],["联想",47.3],["苹果",46.6],["华为",41.3],["酷派",40.1],["其他",111.5]]
+    // 2.转换数据
+    var pie=d3.layout.pie()
+            //默认画一个0-2π的完整的圆，取消下面两句注释则画一个不完整的圆
+            //.startAngle(Math.PI*0.2)
+            //.endAngle(Math.PI*1.5)
+            .value(function(d){
+                return d[1];
+            });
+            
+    //dataset是初始数据，piedata是转换后的数据
+    var piedata=pie(dataset);
+    console.log(piedata);
+    // 3.绘制
+    var outerRadius=width/3;
+    var innerRadius=0;//内半经设为0则中间没有空白
+    //创建弧生成器
+    var arc=d3.svg.arc()
+            .innerRadius(innerRadius)
+            .outerRadius(outerRadius);
+    //定义一个颜色比例尺
+    var color=d3.scale.category20()
+    //在<svg>里添加几个<g>元素，每一个<g>用于包含一段弧
+    var arcs=svg.selectAll("g")
+                .data(piedata)
+                .enter()
+                .append("g")
+                .attr("transform","translate("+(width/2)+","+(height/2)+")");//平移到SVG画板中心
+    //上述代码返回一个<g>元素的选择集,<g>的数量与piedata的长度一致，选择集保存在变量arcs中。
+    //这样一来，只要用arcs.append()就可以同时为所有<g>添加元素
+
+    //添加弧的路径元素
+    arcs.append("path")
+        .attr("fill",function(d,i){
+            //弧的颜色用颜色比例尺返回
+            return color(i);
+        })
+        .attr("d",function(d){
+            //用前面定义的弧生成器生成路径值
+            return arc(d);
+        })
+    //添加弧的文字元素
+    arcs.append("text")
+        .attr("transform",function(d){
+            //arc.centroid方法返回弧中心坐标[x,y]（注意，x和y的值是以圆心坐标为原点而言的）
+            var x=arc.centroid(d)[0]*1.4;//文字的x坐标
+            var y= arc.centroid(d)[1]*1.4;//文字的y坐标
+            return "translate("+x+","+y+")"
+        })
+        .attr("text-anchor","middle")
+        .text(function(d){
+            //计算市场份额的百分比
+            var percent=Number(d.value)/d3.sum(dataset,function(d){return d[1];})*100;
+            return percent.toFixed(1)+"%";//保留1位小数点，末尾加一个百分号返回
+        });
+    //添加连接弧外文字的直线元素
+    arcs.append("line")
+        .attr("stroke","black")
+        .attr("x1",function(d){
+            //arc.centroid方法返回弧中心坐标[x,y]（注意，x和y的值是以圆心坐标为原点而言的）
+            return arc.centroid(d)[0]*2;
+        })
+        .attr("y1",function(d){
+            return arc.centroid(d)[1]*2;
+        })
+        .attr("x2",function(d){
+            return arc.centroid(d)[0]*2.2;
+        })
+        .attr("y2",function(d){
+            return arc.centroid(d)[1]*2.2;
+        })
+    //添加弧外的文字元素
+    arcs.append("text")
+        .attr("transform",function(d){
+            var x=arc.centroid(d)[0]*2.5;
+            var y=arc.centroid(d)[1]*2.5;
+            return "translate("+x+","+y+")";
+        })
+        .attr("text-anchor","middle")
+        .text(function(d){
+            return d.data[0];
+        });
+</script>
+</html>
